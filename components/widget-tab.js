@@ -94,7 +94,7 @@ a {
 
 @media screen and (min-width: 700px) {
   .tabBlock-tab {
-    padding: 1.3rem 2.5rem
+    padding: 1rem 2rem
   }
 }
   
