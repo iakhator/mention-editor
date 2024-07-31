@@ -43,7 +43,12 @@ class WidgetButton extends HTMLElement {
 
   // Handle click event
   handleClick() {
-    // alert('Button clicked!');
+    const event = new CustomEvent('handleClick', {
+      detail: null,
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   connectedCallback() {
@@ -57,14 +62,11 @@ class WidgetButton extends HTMLElement {
     }
 
     if (name === 'buttonStyle') {
-      console.log(name, 'buttontyple');
-      console.log(newValue, 'name');
       this.updateButtonStyle(newValue);
     }
   }
 
   updateDisabledState(isDisabled) {
-    console.log(isDisabled, 'isdiabled');
     if (isDisabled) {
       this.buttonElement.setAttribute('disabled', '');
       this.buttonElement.classList.add('disabled');
@@ -77,7 +79,6 @@ class WidgetButton extends HTMLElement {
   updateButtonStyle(style) {
     if (style) {
       try {
-        console.log(style, 'style');
         const styleObj = JSON.parse(style);
         for (const [key, value] of Object.entries(styleObj)) {
           this.buttonElement.style[key] = value;

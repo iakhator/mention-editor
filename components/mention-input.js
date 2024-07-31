@@ -25,7 +25,7 @@ template.innerHTML = `
     .mention-wrapper {
       display: grid;
       grid-template-rows: 20% auto 20%;
-      gap: 1.25rem;
+      gap: 1rem;
       height: 100%;
     }
 
@@ -41,6 +41,13 @@ template.innerHTML = `
     .mention-wrapper__input-textarea {
       resize: none;
       flex: 1;
+    }
+
+     .mention-wrapper__input-textarea:empty::before {
+      content: attr(data-placeholder);
+      color: #d8d8d8;
+      pointer-events: none;
+      position: absolute;
     }
 
     .mention-wrapper__input-textarea:focus {
@@ -81,10 +88,9 @@ template.innerHTML = `
     <p><span>94</span> Points To Award</p>
     <div class="mention-wrapper__input">
       <div class="mention-wrapper__input-button">
-        <button id="hashtag">HashTag</button>
         <widget-button buttonStyle='{"padding": "8px 15px", "fontWeight": "600"}'>@Employee</widget-button>
       </div>
-      <div id="textInput" contenteditable="true" class="mention-wrapper__input-textarea"></div>
+      <div id="textInput" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here..."></div>
       <div id="suggestion-box" class="suggestion-box"></div>
     </div>
     <div class="mention-wrapper__footer">
@@ -105,11 +111,13 @@ class MentionInput extends HTMLElement {
     this.suggestionsBox.style.display = 'none';
 
     this.handleHashTagClick = this.handleHashTagClick.bind(this);
-    this.shadowRoot
-      .getElementById('hashtag')
-      .addEventListener('click', this.handleHashTagClick);
 
     this.users = ['@john_doe', '@jane_smith', '@alice_wonder', '@bob_builder'];
+  }
+
+  connectedCallback() {
+    const widgetButton = this.shadowRoot.querySelector('widget-button');
+    widgetButton.addEventListener('handleClick', this.handleHashTagClick);
   }
 
   handleHashTagClick(event) {
