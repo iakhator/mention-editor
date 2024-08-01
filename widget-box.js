@@ -10,6 +10,7 @@ template.innerHTML = `
   .widget_box {
     background: #fff;
     width: 70vw;
+    max-width: 1000px;
     height: 400px;
     border-radius: 30px;
     display: flex;

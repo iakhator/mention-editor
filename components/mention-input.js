@@ -25,7 +25,7 @@ template.innerHTML = `
     .mention-wrapper {
       display: grid;
       grid-template-rows: 20% auto 20%;
-      gap: 1rem;
+      gap: 0.5rem;
       height: 100%;
     }
 
@@ -111,7 +111,24 @@ template.innerHTML = `
       border-bottom-left-radius: 10px;
       border-bottom-right-radius: 10px;
   }
-}
+
+  .tippy-box[data-theme~="emoji-light"] {
+      background-color: #ffffff; 
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+      border-radius:10px;
+      width: 220px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.875rem;
+      display: flex;
+    }
+    
+    .tippy-box[data-theme~="emoji-light"] .tippy-content{
+      background: red;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
   </style>
   <div class="mention-wrapper">
     <p><span>94</span> Points To Award</p>
@@ -120,13 +137,13 @@ template.innerHTML = `
         <widget-button buttonStyle='{"padding": "8px 15px", "fontWeight": "600"}'>@Employee</widget-button>
       </div>
       <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here..."></div>
+      <div id="tippy-emoji" class="emoji-picker"></div>
       <div id="tippy-reference" class="tippy-reference"></div>
-
-    </div>
-    <div class="mention-wrapper__footer">
-      <div role="button" class="icon-button"><i class="fa-regular fa-face-smile"></i></div>
-      <widget-button disabled buttonStyle='{"fontSize": "20px", "padding": "10px 30px"}'>Send Bravo!</widget-button>
-    </div>
+      </div>
+      <div class="mention-wrapper__footer">
+        <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
+        <widget-button disabled buttonStyle='{"fontSize": "20px", "padding": "10px 30px"}'>Send Bravo!</widget-button>
+      </div>
   </div>
 `;
 
@@ -158,12 +175,56 @@ class MentionInput extends HTMLElement {
       { firstname: 'Rachel', lastname: 'Harris' },
       { firstname: 'Steve', lastname: 'King' },
     ];
+    this.emojis = [
+      { emoji: '😀', keywords: ['grinning', 'happy', 'smile'] },
+      { emoji: '😁', keywords: ['grinning', 'smile', 'happy', 'eyes'] },
+      { emoji: '😂', keywords: ['joy', 'tears', 'happy', 'funny'] },
+      { emoji: '🤣', keywords: ['rofl', 'rolling', 'floor', 'laughing'] },
+      { emoji: '😃', keywords: ['smiling', 'happy', 'joy', 'smile'] },
+      { emoji: '😄', keywords: ['smiling', 'eyes', 'happy', 'joy'] },
+      { emoji: '😅', keywords: ['grinning', 'sweat', 'nervous', 'happy'] },
+      { emoji: '😆', keywords: ['laughing', 'satisfied', 'happy'] },
+      { emoji: '😉', keywords: ['wink', 'flirty', 'playful'] },
+      { emoji: '😊', keywords: ['blush', 'smile', 'happy', 'shy'] },
+      { emoji: '😋', keywords: ['yum', 'tongue', 'happy'] },
+      { emoji: '😎', keywords: ['cool', 'sunglasses', 'happy'] },
+      { emoji: '😍', keywords: ['heart', 'eyes', 'love', 'happy'] },
+      { emoji: '😘', keywords: ['kiss', 'heart', 'love', 'happy'] },
+      { emoji: '😗', keywords: ['kiss', 'happy', 'love'] },
+      { emoji: '😙', keywords: ['kiss', 'smile', 'happy'] },
+      { emoji: '😚', keywords: ['kiss', 'closed', 'eyes', 'happy'] },
+      { emoji: '🙂', keywords: ['slightly', 'smiling', 'happy'] },
+      { emoji: '🤗', keywords: ['hugging', 'hands', 'happy'] },
+      { emoji: '🤔', keywords: ['thinking', 'thoughtful', 'pensive'] },
+      { emoji: '😐', keywords: ['neutral', 'meh', 'indifferent'] },
+      { emoji: '😑', keywords: ['expressionless', 'blank'] },
+      { emoji: '😶', keywords: ['speechless', 'no', 'mouth'] },
+      { emoji: '🙄', keywords: ['eyeroll', 'sarcastic', 'annoyed'] },
+      { emoji: '😏', keywords: ['smirking', 'smug', 'sly'] },
+      { emoji: '😣', keywords: ['persevering', 'struggling', 'uncomfortable'] },
+      { emoji: '😥', keywords: ['sad', 'crying', 'disappointed'] },
+      { emoji: '😮', keywords: ['surprised', 'shocked', 'wow'] },
+      { emoji: '🤐', keywords: ['zipper', 'mouth', 'silent'] },
+      { emoji: '😯', keywords: ['hushed', 'quiet', 'surprised'] },
+      { emoji: '😪', keywords: ['sleepy', 'tired', 'drowsy'] },
+      { emoji: '😫', keywords: ['tired', 'exhausted', 'weary'] },
+      { emoji: '😴', keywords: ['sleeping', 'zzz', 'tired'] },
+      { emoji: '😌', keywords: ['relieved', 'content', 'calm'] },
+      { emoji: '🤓', keywords: ['nerd', 'glasses', 'smart'] },
+      { emoji: '😛', keywords: ['tongue', 'playful', 'silly'] },
+      { emoji: '😜', keywords: ['winking', 'tongue', 'playful'] },
+      { emoji: '😝', keywords: ['tongue', 'closed', 'eyes', 'playful'] },
+    ];
+
     this.input = this.shadowRoot.getElementById('mention-input');
+    this.emojiButton = this.shadowRoot.getElementById('emoji-button');
 
     this.tippyReference = this.shadowRoot.getElementById('tippy-reference');
+    this.emojiReference = this.shadowRoot.getElementById('tippy-emoji');
 
     this.input.addEventListener('keyup', this.onKeyUp.bind(this));
     this.input.addEventListener('input', this.onInput.bind(this));
+    this.emojiButton.addEventListener('click', this.showEmojiPicker.bind(this));
 
     this.tippyInstance = tippy(this.tippyReference, {
       content: '',
@@ -174,6 +235,16 @@ class MentionInput extends HTMLElement {
       interactive: true,
       theme: 'mention-light',
     });
+
+    this.emojiInstance = tippy(this.emojiReference, {
+      content: '',
+      allowHTML: true,
+      trigger: 'manual',
+      appendTo: 'parent',
+      placement: 'bottom-start',
+      interactive: true,
+      theme: 'emoji-light',
+    });
   }
 
   connectedCallback() {
@@ -183,6 +254,12 @@ class MentionInput extends HTMLElement {
       this.insertAtCaret('@');
       this.onKeyUp();
     });
+  }
+
+  disconnectedCallBack() {
+    console.log('disconnectedCallBack');
+    this.tippyInstance.destroy();
+    this.emojiInstance.destroy();
   }
 
   onKeyUp(e) {
@@ -223,7 +300,7 @@ class MentionInput extends HTMLElement {
 
     this.tippyInstance.setContent(suggestionsHTML);
     // Position the tippy-reference element at the location of the @ character
-    this.positionTippyAtCaret();
+    this.positionTippyAtCaret(this.tippyInstance);
     this.tippyInstance.show();
 
     this.shadowRoot.querySelectorAll('.suggestion-item').forEach((item) => {
@@ -262,7 +339,9 @@ class MentionInput extends HTMLElement {
 
   getCaretPosition() {
     let caretPos = 0;
-    const selection = this.shadowRoot.getSelection();
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const preCaretRange = range.cloneRange();
@@ -275,7 +354,9 @@ class MentionInput extends HTMLElement {
   }
 
   insertAtCaret(text) {
-    const sel = this.shadowRoot.getSelection();
+    const sel = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
     const range = sel.getRangeAt(0);
     range.deleteContents();
 
@@ -294,7 +375,9 @@ class MentionInput extends HTMLElement {
 
   setCaretPosition(pos) {
     const range = document.createRange();
-    const selection = this.shadowRoot.getSelection();
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
     let node = this.input;
     let nodes = node.childNodes;
     let chars = pos;
@@ -324,54 +407,55 @@ class MentionInput extends HTMLElement {
     const range = document.createRange();
     range.selectNodeContents(el);
     range.collapse(false);
-    const sel = this.shadowRoot.getSelection();
+    const sel = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
   }
 
-  positionTippy(cursorPos) {
-    const range = document.createRange();
-    const node = this.input.childNodes[0];
-
-    console.log(node, 'node');
-
-    console.log(cursorPos, 'curso pos');
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      range.setStart(node, Math.min(cursorPos, node.length));
-      range.collapse(true);
-    } else {
-      range.selectNodeContents(node);
-    }
-
-    const rect = this.input.getBoundingClientRect();
-    console.log(rect, 'rect');
-    this.tippyInstance.setProps({
-      getReferenceClientRect: () => ({
-        width: 0,
-        height: 0,
-        top: rect.top,
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-      }),
-    });
-  }
-
-  positionTippyAtCaret() {
-    const selection = this.shadowRoot.getSelection();
+  positionTippyAtCaret(instance) {
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
     if (selection.rangeCount === 0) return;
 
     const range = selection.getRangeAt(0).cloneRange();
     range.collapse(true);
 
+    let { commonAncestorContainer } = range;
+
+    // Ensure commonAncestorContainer is a text node
+    if (commonAncestorContainer.nodeType !== Node.TEXT_NODE) {
+      // If it's not a text node, find the first text node within it
+      if (commonAncestorContainer.childNodes.length > 0) {
+        commonAncestorContainer = commonAncestorContainer.childNodes[0];
+        while (
+          commonAncestorContainer &&
+          commonAncestorContainer.nodeType !== Node.TEXT_NODE
+        ) {
+          commonAncestorContainer = commonAncestorContainer.nextSibling;
+        }
+      }
+    }
+
+    // If we couldn't find a text node, return
+    if (
+      !commonAncestorContainer ||
+      commonAncestorContainer.nodeType !== Node.TEXT_NODE
+    ) {
+      return;
+    }
+
     const rect = range.getClientRects()[0];
+    // console.log(range, 'instance');
+    // console.log(commonAncestorContainer.textContent, 'textcontent');
     if (!rect) return;
 
     const { top, left, height } = rect;
     const { scrollX, scrollY } = window;
 
-    this.tippyInstance.setProps({
+    instance.setProps({
       getReferenceClientRect: () => ({
         width: 0,
         height: 0,
@@ -382,6 +466,86 @@ class MentionInput extends HTMLElement {
       }),
     });
   }
+
+  // emoji
+
+  showEmojiPicker() {
+    const emojisHTML = this.emojis
+      .map(
+        (em) => `
+          <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
+        `
+      )
+      .join('');
+
+    this.emojiInstance.setContent(emojisHTML);
+
+    this.placeCaretAtEnd(this.input);
+    this.positionTippyAtCaret(this.emojiInstance);
+    this.emojiInstance.show();
+
+    this.shadowRoot.querySelectorAll('.emoji-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        this.insertEmoji(item.textContent);
+      });
+    });
+  }
+
+  // showEmojiPicker() {
+  //   // Create the search input
+  //   const searchInputHTML = `
+  //     <div style="padding: 5px;">
+  //       <input type="text" id="emoji-search-input" placeholder="Search emojis..." style="width: 100%; padding: 5px; border: 1px solid #d8d8d8; border-radius: 5px;">
+  //     </div>
+  //   `;
+
+  //   // Create the initial emojis HTML
+  //   const emojisHTML = this.emojis
+  //     .map(
+  //       (em) => `
+  //         <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
+  //       `
+  //     )
+  //     .join('');
+
+  //   // Set the initial content of the tippy instance
+  //   this.tippyInstance.setContent(searchInputHTML + emojisHTML);
+  //   this.placeCaretAtEnd(this.input);
+
+  //   this.positionTippyAtCaret();
+  //   this.tippyInstance.show();
+
+  //   // Add event listener to the search input
+  //   const searchInput = this.shadowRoot.querySelector('#emoji-search-input');
+  //   searchInput.addEventListener('input', (event) => {
+  //     const query = event.target.value.toLowerCase();
+  //     const filteredEmojisHTML = this.emojis
+  //       .filter((em) => em.keywords.some((keyword) => keyword.includes(query)))
+  //       .map(
+  //         (em) => `
+  //           <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
+  //         `
+  //       )
+  //       .join('');
+
+  //     // Update the tippy content with the filtered emojis
+  //     this.tippyInstance.setContent(searchInputHTML + filteredEmojisHTML);
+
+  //     // Add click event listeners to the filtered emojis
+  //     this.shadowRoot.querySelectorAll('.emoji-item').forEach((item) => {
+  //       item.addEventListener('click', () => {
+  //         this.insertEmoji(item.textContent);
+  //       });
+  //     });
+  //   });
+
+  //   // Add click event listeners to the initial emojis
+  //   this.shadowRoot.querySelectorAll('.emoji-item').forEach((item) => {
+  //     item.addEventListener('click', () => {
+  //       this.insertEmoji(item.textContent);
+  //     });
+  //   });
+  // }
 }
 
 customElements.define('mention-input', MentionInput);
