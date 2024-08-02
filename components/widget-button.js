@@ -20,10 +20,14 @@ template.innerHTML = `
     opacity: 0.6;
   }
   </style>
-  <button class="widget-button"><slot></slot></button>
+  <button class="widget-button" id="btn"><slot></slot></button>
 `;
 
 class WidgetButton extends HTMLElement {
+  static get observedAttributes() {
+    return ['disabled', 'button-style'];
+  }
+
   constructor() {
     super();
     // Attach shadow DOM
@@ -35,10 +39,6 @@ class WidgetButton extends HTMLElement {
     this.shadowRoot.appendChild(template.content.cloneNode(true));
     this.addEventListener('click', this.handleClick.bind(this));
     this.buttonElement = this.shadowRoot.querySelector('button');
-  }
-
-  static get observedAttributes() {
-    return ['disabled', 'buttonStyle'];
   }
 
   // Handle click event
@@ -57,11 +57,12 @@ class WidgetButton extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
+    console.log(newValue, 'newValue');
     if (name === 'disabled') {
       this.updateDisabledState(newValue !== null);
     }
 
-    if (name === 'buttonStyle') {
+    if (name === 'button-style') {
       this.updateButtonStyle(newValue);
     }
   }
@@ -76,20 +77,42 @@ class WidgetButton extends HTMLElement {
     }
   }
 
-  updateButtonStyle(style) {
-    if (style) {
-      try {
-        const styleObj = JSON.parse(style);
-        for (const [key, value] of Object.entries(styleObj)) {
-          this.buttonElement.style[key] = value;
-        }
-      } catch (e) {
-        console.error('Invalid JSON for buttonStyle:', e);
-      }
-    } else {
-      this.buttonElement.style = '';
-      this.buttonElement.className = 'widget-button';
+  updateButtonStyle(styleString) {
+    if (!styleString) return;
+
+    try {
+      const styleObject = JSON.parse(styleString);
+      Object.keys(styleObject).forEach((key) => {
+        this.buttonElement.style[key] = styleObject[key];
+      });
+    } catch (e) {
+      console.error('Invalid buttonStyle JSON:', styleString);
     }
+  }
+
+  render() {
+    return `
+    <style>
+      .widget-button {
+        background-color: #fff;
+        border: 1px solid #BFBFBF;
+        border-radius: 5rem;
+        cursor: pointer;
+      }
+  
+    .custom-button:hover {
+      background-color: #0056b3;
+    }
+  
+    button:disabled {
+      background-color: #BEBEBE;
+      border: none;
+      color: #666666;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    </style>
+    <button class="widget-button" id="btn"><slot></slot></button>`;
   }
 }
 
