@@ -123,17 +123,19 @@ template.innerHTML = `
       background-color: #ffffff; 
       box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
       border-radius:10px;
-      width: 220px;
+      width: 310px;
+      max-width: 310px;
       max-height: 200px;
       overflow-y: auto;
-      font-size: 0.875rem;
       display: flex;
+      padding: 0.8rem;
     }
     
     .tippy-box[data-theme~="emoji-light"] .tippy-content{
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      font-size: 1.125rem;
     }
 
   // [contenteditable=true] {
@@ -640,10 +642,13 @@ class MentionInput extends HTMLElement {
 
   insertEmoji(emoji) {
     const cursorPos = this.getCaretPosition();
-    const text = this.input.innerHTML;
+    let text = this.input.innerHTML;
     const beforeCursor = text.substring(0, cursorPos);
     const afterCursor = text.substring(cursorPos);
-    const newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
+    let newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
+
+    // Remove any <br> tags from the new text
+    newText = newText.replace(/<br\s*\/?>/gi, '');
 
     this.input.innerHTML = newText;
     // this.setCaretPosition(cursorPos + emoji.length);
