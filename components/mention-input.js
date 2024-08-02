@@ -588,11 +588,9 @@ class MentionInput extends HTMLElement {
     const afterCursor = text.substring(cursorPos);
     let newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
 
-    // Remove any <br> tags from the new text
     newText = newText.replace(/<br\s*\/?>/gi, '');
 
     this.input.innerHTML = newText;
-    // this.setCaretPosition(cursorPos + emoji.length);
     this.placeCaretAtEnd(this.input);
     this.emojiInstance.hide();
   }

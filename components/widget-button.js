@@ -30,18 +30,15 @@ class WidgetButton extends HTMLElement {
 
   constructor() {
     super();
-    // Attach shadow DOM
     this.attachShadow({
       mode: 'open',
     });
 
-    // Add click event listener
     this.shadowRoot.appendChild(template.content.cloneNode(true));
     this.addEventListener('click', this.handleClick.bind(this));
     this.buttonElement = this.shadowRoot.querySelector('button');
   }
 
-  // Handle click event
   handleClick() {
     const event = new CustomEvent('handleClick', {
       detail: null,
