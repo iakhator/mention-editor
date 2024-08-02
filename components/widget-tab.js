@@ -11,15 +11,6 @@ template.innerHTML = `
   box-sizing: border-box;
 }
 
-body {
-  color: #222;
-  font-family: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-  line-height: 1.5;
-  margin: 0 auto;
-  max-width: 50rem;
-  padding: 2.5rem 1.25rem;
-}
-
 p {
   padding: 5px;
 }
@@ -29,18 +20,14 @@ a {
   color: #2C2C2C;
 }
 
-.widget-tab__section {
-    padding: 25px;
-    height: 100%;
-}
-
 :host {
     display: block;
     height: 100%;
 }
 
 ::slotted(*) {
-    height: 85%;
+    display: block;
+    height: 100%;
 }
 
 @media screen and (min-width: 700px) {
@@ -57,6 +44,8 @@ a {
 
 .tabBlock {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .tabBlock-tab {
@@ -126,12 +115,14 @@ a {
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
   border-top-right-radius: 10px;
-  height: 85%;
+  max-height: 90%;
+  height: 90%;
 
 }
 
 .tabBlock-pane: {
   height: 100%;
+  max-height: 100%;
 }
 
 .tabBlock-pane > :last-child {
@@ -148,7 +139,7 @@ a {
       </li>
     </ul>
     <div class="tabBlock-content">
-      <div class="tabBlock-pane">
+      <div class="tabBlock-pane" style="height: 100%; max-height: 100%">
         <slot>
       </div>
     </div>

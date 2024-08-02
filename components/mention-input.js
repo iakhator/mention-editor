@@ -32,15 +32,22 @@ template.innerHTML = `
     .mention-wrapper__input {
       border: 2px solid #d8d8d8;
       border-radius: 20px;
-      padding: 23px;
       display:flex;
       flex-direction: column;
-      gap :15px;
+      max-height: 100%; 
+      overflow-y: auto;
+    }
+
+  .mention-wrapper__input-button {
+      padding: 20px 0px 20px 20px;
     }
 
     .mention-wrapper__input-textarea {
-      resize: none;
-      flex: 1;
+      // white-space: pre-wrap;
+      padding: 0px 20px 20px 20px;
+      height: 40%;
+      overflow-y: auto;
+      overflow-wrap: break-word;
     }
 
      .mention-wrapper__input-textarea:empty::before {
@@ -124,11 +131,14 @@ template.innerHTML = `
     }
     
     .tippy-box[data-theme~="emoji-light"] .tippy-content{
-      background: red;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
     }
+
+  // [contenteditable=true] {
+  //   white-space: pre-wrap
+  // }
   </style>
   <div class="mention-wrapper">
     <p><span>94</span> Points To Award</p>
@@ -136,17 +146,18 @@ template.innerHTML = `
       <div class="mention-wrapper__input-button">
         <widget-button buttonStyle='{"padding": "8px 15px", "fontWeight": "600"}'>@Employee</widget-button>
       </div>
-      <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here..."></div>
-      <div id="tippy-emoji" class="emoji-picker"></div>
-      <div id="tippy-reference" class="tippy-reference"></div>
+      <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here...">
+      </div>
       </div>
       <div class="mention-wrapper__footer">
-        <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
-        <widget-button disabled buttonStyle='{"fontSize": "20px", "padding": "10px 30px"}'>Send Bravo!</widget-button>
+      <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
+      <widget-button disabled buttonStyle='{"fontSize": "20px", "padding": "10px 30px"}'>Send Bravo!</widget-button>
       </div>
-  </div>
-`;
+      </div>
+      `;
 
+// <div id="tippy-emoji" class="emoji-picker"></div>
+// <div id="tippy-reference" class="tippy-reference"></div>
 class MentionInput extends HTMLElement {
   constructor() {
     super();
@@ -224,9 +235,11 @@ class MentionInput extends HTMLElement {
 
     this.input.addEventListener('keyup', this.onKeyUp.bind(this));
     this.input.addEventListener('input', this.onInput.bind(this));
+    this.input.addEventListener('keydown', this.onKeyDown.bind(this));
+
     this.emojiButton.addEventListener('click', this.showEmojiPicker.bind(this));
 
-    this.tippyInstance = tippy(this.tippyReference, {
+    this.tippyInstance = tippy(this.input, {
       content: '',
       allowHTML: true,
       trigger: 'manual',
@@ -236,7 +249,7 @@ class MentionInput extends HTMLElement {
       theme: 'mention-light',
     });
 
-    this.emojiInstance = tippy(this.emojiReference, {
+    this.emojiInstance = tippy(this.input, {
       content: '',
       allowHTML: true,
       trigger: 'manual',
@@ -252,7 +265,7 @@ class MentionInput extends HTMLElement {
     widgetButton.addEventListener('handleClick', () => {
       this.placeCaretAtEnd(this.input);
       this.insertAtCaret('@');
-      this.onKeyUp();
+      this.showSuggestions(this.mentions);
     });
   }
 
@@ -260,6 +273,72 @@ class MentionInput extends HTMLElement {
     console.log('disconnectedCallBack');
     this.tippyInstance.destroy();
     this.emojiInstance.destroy();
+  }
+
+  insertNewLine() {
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
+    const range = selection.getRangeAt(0);
+    const br = document.createElement('br');
+    range.deleteContents();
+    range.insertNode(br);
+
+    // Move the caret after the <br> tag
+    range.setStartAfter(br);
+    range.setEndAfter(br);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    this.input.focus();
+
+    // Replace <br> tags with newline characters in textContent
+    // const mentionInput = this.shadowRoot.getElementById('mention-input');
+    // mentionInput.innerHTML = mentionInput.innerHTML.replace(/<br>/g, '\n');
+  }
+
+  onKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (this.tippyInstance.state.isVisible) {
+        return;
+      }
+      this.insertNewLine();
+    }
+    if (e.key === 'Backspace') {
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const startContainer = range.startContainer;
+        const startOffset = range.startOffset;
+
+        // Check if the caret is at the beginning of a text node
+        if (
+          startContainer.nodeType === Node.TEXT_NODE &&
+          startOffset === startContainer.textContent.length
+        ) {
+          const parentElement = startContainer.parentElement;
+
+          // Regex to match @mention
+          const mentionRegex = /@\w+/;
+
+          // Check if the parent element is a span with an @mention
+          if (
+            parentElement.tagName === 'SPAN' &&
+            mentionRegex.test(parentElement.textContent) &&
+            startOffset === parentElement.textContent.length
+          ) {
+            e.preventDefault();
+            parentElement.remove();
+
+            this.placeCaretAtEnd(this.input);
+
+            return;
+          }
+        }
+      }
+    }
   }
 
   onKeyUp(e) {
@@ -315,27 +394,92 @@ class MentionInput extends HTMLElement {
   }
 
   selectMention(mention) {
-    const cursorPos = this.getCaretPosition();
     const text = this.input.textContent;
 
     // Regular expression to find all @mentions
-    const mentionRegex = /@(\w+)/g;
+    const mentionRegex = /@(\w+\s*\w*)/g;
 
-    console.log(mention, 'mention', text, 'mention regex');
-
-    const newText = text.replace(mentionRegex, (match, p1) => {
+    // Replace all existing mentions with span tags
+    const newText = text.replace(mentionRegex, (match) => {
       return `<span class="mention">${match}</span>`;
     });
 
-    // Insert a space after the mention
+    // Insert the selected mention at the current caret position
     const mentionWithSpace = `<span class="mention">@${mention}</span>&nbsp;`;
-    const newTextWithSpace = newText.replace(/@(\w*)$/, mentionWithSpace);
 
-    this.input.innerHTML = newTextWithSpace;
-    // this.setCaretPosition(this.getCaretPosition() + mentionWithSpace.length);
-    this.placeCaretAtEnd(this.input); // Focus the input after setting the caret position
+    // console.log(mentionWithSpace, 'mention with space');
+
+    // Find the last @mention being typed and replace it with mentionWithSpace
+    const textBeforeCursor = newText.replace(/@(\w*\s*\w*)$/, mentionWithSpace);
+
+    console.log(textBeforeCursor, 'beforecursore');
+
+    // Set the new content with mentions wrapped in span tags
+    this.input.innerHTML = textBeforeCursor;
+
+    // Move the caret to after the inserted mention
+    const range = document.createRange();
+    const sel = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
+
+    const lastMention = this.input.querySelector('span.mention:last-of-type');
+    if (lastMention && lastMention.nextSibling) {
+      range.setStartAfter(lastMention.nextSibling); // Move caret after the space
+      range.setEndAfter(lastMention.nextSibling);
+    } else {
+      range.selectNodeContents(this.input);
+      range.collapse(false); // Move caret to the end if no sibling found
+    }
+    this.placeCaretAtEnd(this.input);
+
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    this.input.focus();
     this.hideSuggestions();
   }
+
+  // selectMention(mention) {
+  //   console.log(mention, 'mention');
+
+  //   const newMention = {
+  //     type: 'mention',
+  //     attrs: {
+  //       id: mention,
+  //     },
+  //     content: [
+  //       {
+  //         type: 'text',
+  //         text: `@${mention}`,
+  //       },
+  //     ],
+  //   };
+
+  //   this.content.content.push(newMention);
+  //   this.input.innerHTML = this.convertTiptapJsonToHtml(this.content);
+
+  //   const range = document.createRange();
+  //   const sel = this.shadowRoot.getSelection
+  //     ? this.shadowRoot.getSelection()
+  //     : document.getSelection();
+
+  //   const lastMention = this.input.querySelector('span.mention:last-of-type');
+  //   if (lastMention && lastMention.nextSibling) {
+  //     range.setStartAfter(lastMention.nextSibling); // Move caret after the space
+  //     range.setEndAfter(lastMention.nextSibling);
+  //   } else {
+  //     range.selectNodeContents(this.input);
+  //     range.collapse(false); // Move caret to the end if no sibling found
+  //   }
+  //   this.placeCaretAtEnd(this.input);
+
+  //   sel.removeAllRanges();
+  //   sel.addRange(range);
+
+  //   this.input.focus();
+  //   this.hideSuggestions();
+  // }
 
   getCaretPosition() {
     let caretPos = 0;
@@ -354,6 +498,9 @@ class MentionInput extends HTMLElement {
   }
 
   insertAtCaret(text) {
+    // Ensure the input is focused after inserting text
+    this.input.focus();
+
     const sel = this.shadowRoot.getSelection
       ? this.shadowRoot.getSelection()
       : document.getSelection();
@@ -364,13 +511,78 @@ class MentionInput extends HTMLElement {
     range.insertNode(textNode);
 
     // Move the caret to the end of the inserted text
-    range.setStartAfter(textNode);
-    range.setEndAfter(textNode);
+    range.setStart(textNode, textNode.length);
+    range.setEnd(textNode, textNode.length);
+    // range.setStartAfter(textNode);
+    // range.setEndAfter(textNode);
+
     sel.removeAllRanges();
     sel.addRange(range);
+  }
 
-    // Ensure the input is focused after inserting text
-    this.input.focus();
+  placeCaretAtEnd(el) {
+    el.focus();
+    const range = document.createRange();
+    const sel = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
+    sel.removeAllRanges();
+
+    // Find the last text node within the element
+    function getLastTextNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node;
+      }
+      for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        const textNode = getLastTextNode(node.childNodes[i]);
+        if (textNode) {
+          return textNode;
+        }
+      }
+      return null;
+    }
+
+    const lastTextNode = getLastTextNode(el);
+
+    if (lastTextNode) {
+      range.setStart(lastTextNode, lastTextNode.length);
+      range.collapse(true);
+      sel.addRange(range);
+    } else {
+      // If no text node is found, place caret at the end of the element
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.addRange(range);
+    }
+  }
+
+  positionTippyAtCaret(instance) {
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0).cloneRange();
+    range.collapse(true);
+
+    const rect = range.getClientRects()[0];
+    // console.log(selection, 'instance');
+    // console.log(range.commonAncestorContainer, 'textcontent');
+    if (!rect) return;
+
+    const { top, left, height } = rect;
+    const { scrollX, scrollY } = window;
+
+    instance.setProps({
+      getReferenceClientRect: () => ({
+        width: 0,
+        height: 0,
+        top: top + scrollY + 20,
+        bottom: top + height + scrollY,
+        left: left + scrollX,
+        right: left + scrollX,
+      }),
+    });
   }
 
   setCaretPosition(pos) {
@@ -402,79 +614,14 @@ class MentionInput extends HTMLElement {
     selection.addRange(range);
   }
 
-  placeCaretAtEnd(el) {
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = this.shadowRoot.getSelection
-      ? this.shadowRoot.getSelection()
-      : document.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  positionTippyAtCaret(instance) {
-    const selection = this.shadowRoot.getSelection
-      ? this.shadowRoot.getSelection()
-      : document.getSelection();
-    if (selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0).cloneRange();
-    range.collapse(true);
-
-    let { commonAncestorContainer } = range;
-
-    // Ensure commonAncestorContainer is a text node
-    if (commonAncestorContainer.nodeType !== Node.TEXT_NODE) {
-      // If it's not a text node, find the first text node within it
-      if (commonAncestorContainer.childNodes.length > 0) {
-        commonAncestorContainer = commonAncestorContainer.childNodes[0];
-        while (
-          commonAncestorContainer &&
-          commonAncestorContainer.nodeType !== Node.TEXT_NODE
-        ) {
-          commonAncestorContainer = commonAncestorContainer.nextSibling;
-        }
-      }
-    }
-
-    // If we couldn't find a text node, return
-    if (
-      !commonAncestorContainer ||
-      commonAncestorContainer.nodeType !== Node.TEXT_NODE
-    ) {
-      return;
-    }
-
-    const rect = range.getClientRects()[0];
-    // console.log(range, 'instance');
-    // console.log(commonAncestorContainer.textContent, 'textcontent');
-    if (!rect) return;
-
-    const { top, left, height } = rect;
-    const { scrollX, scrollY } = window;
-
-    instance.setProps({
-      getReferenceClientRect: () => ({
-        width: 0,
-        height: 0,
-        top: top + scrollY + 20,
-        bottom: top + height + scrollY,
-        left: left + scrollX,
-        right: left + scrollX,
-      }),
-    });
-  }
-
   // emoji
 
   showEmojiPicker() {
     const emojisHTML = this.emojis
       .map(
         (em) => `
-          <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
-        `
+              <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
+            `
       )
       .join('');
 
@@ -491,61 +638,18 @@ class MentionInput extends HTMLElement {
     });
   }
 
-  // showEmojiPicker() {
-  //   // Create the search input
-  //   const searchInputHTML = `
-  //     <div style="padding: 5px;">
-  //       <input type="text" id="emoji-search-input" placeholder="Search emojis..." style="width: 100%; padding: 5px; border: 1px solid #d8d8d8; border-radius: 5px;">
-  //     </div>
-  //   `;
+  insertEmoji(emoji) {
+    const cursorPos = this.getCaretPosition();
+    const text = this.input.innerHTML;
+    const beforeCursor = text.substring(0, cursorPos);
+    const afterCursor = text.substring(cursorPos);
+    const newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
 
-  //   // Create the initial emojis HTML
-  //   const emojisHTML = this.emojis
-  //     .map(
-  //       (em) => `
-  //         <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
-  //       `
-  //     )
-  //     .join('');
-
-  //   // Set the initial content of the tippy instance
-  //   this.tippyInstance.setContent(searchInputHTML + emojisHTML);
-  //   this.placeCaretAtEnd(this.input);
-
-  //   this.positionTippyAtCaret();
-  //   this.tippyInstance.show();
-
-  //   // Add event listener to the search input
-  //   const searchInput = this.shadowRoot.querySelector('#emoji-search-input');
-  //   searchInput.addEventListener('input', (event) => {
-  //     const query = event.target.value.toLowerCase();
-  //     const filteredEmojisHTML = this.emojis
-  //       .filter((em) => em.keywords.some((keyword) => keyword.includes(query)))
-  //       .map(
-  //         (em) => `
-  //           <div class="emoji-item" style="padding: 5px; cursor: pointer;">${em.emoji}</div>
-  //         `
-  //       )
-  //       .join('');
-
-  //     // Update the tippy content with the filtered emojis
-  //     this.tippyInstance.setContent(searchInputHTML + filteredEmojisHTML);
-
-  //     // Add click event listeners to the filtered emojis
-  //     this.shadowRoot.querySelectorAll('.emoji-item').forEach((item) => {
-  //       item.addEventListener('click', () => {
-  //         this.insertEmoji(item.textContent);
-  //       });
-  //     });
-  //   });
-
-  //   // Add click event listeners to the initial emojis
-  //   this.shadowRoot.querySelectorAll('.emoji-item').forEach((item) => {
-  //     item.addEventListener('click', () => {
-  //       this.insertEmoji(item.textContent);
-  //     });
-  //   });
-  // }
+    this.input.innerHTML = newText;
+    // this.setCaretPosition(cursorPos + emoji.length);
+    this.placeCaretAtEnd(this.input);
+    this.hideSuggestions();
+  }
 }
 
 customElements.define('mention-input', MentionInput);
