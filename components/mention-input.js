@@ -272,36 +272,13 @@ class MentionInput extends HTMLElement {
     this.emojiInstance.destroy();
   }
 
-  insertNewLine() {
-    const selection = this.shadowRoot.getSelection
-      ? this.shadowRoot.getSelection()
-      : document.getSelection();
-    const range = selection.getRangeAt(0);
-    const br = document.createElement('br');
-    range.deleteContents();
-    range.insertNode(br);
-
-    // Move the caret after the <br> tag
-    range.setStartAfter(br);
-    range.setEndAfter(br);
-
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    this.input.focus();
-
-    // Replace <br> tags with newline characters in textContent
-    // const mentionInput = this.shadowRoot.getElementById('mention-input');
-    // mentionInput.innerHTML = mentionInput.innerHTML.replace(/<br>/g, '\n');
-  }
-
   onKeyDown(e) {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      if (this.tippyInstance.state.isVisible) {
-        return;
-      }
-      this.insertNewLine();
+      // e.preventDefault();
+      // if (this.tippyInstance.state.isVisible) {
+      //   return;
+      // }
+      // this.insertNewLine();
     }
     if (e.key === 'Backspace') {
       const selection = window.getSelection();
@@ -309,17 +286,14 @@ class MentionInput extends HTMLElement {
         const range = selection.getRangeAt(0);
         const startContainer = range.startContainer;
         const startOffset = range.startOffset;
-
         // Check if the caret is at the beginning of a text node
         if (
           startContainer.nodeType === Node.TEXT_NODE &&
           startOffset === startContainer.textContent.length
         ) {
           const parentElement = startContainer.parentElement;
-
           // Regex to match @mention
           const mentionRegex = /@\w+/;
-
           // Check if the parent element is a span with an @mention
           if (
             parentElement.tagName === 'SPAN' &&
@@ -328,7 +302,6 @@ class MentionInput extends HTMLElement {
           ) {
             e.preventDefault();
             parentElement.remove();
-
             this.checkForMention();
             this.placeCaretAtEnd(this.input);
             return;
@@ -412,7 +385,7 @@ class MentionInput extends HTMLElement {
   }
 
   selectMention(mention) {
-    const text = this.input.textContent;
+    const text = this.input.innerText;
 
     // Regular expression to find all @mentions
     const mentionRegex = /@(\w+\s*\w*)/g;
@@ -429,7 +402,7 @@ class MentionInput extends HTMLElement {
     const textBeforeCursor = newText.replace(/@(\w*\s*\w*)$/, mentionWithSpace);
 
     // Set the new content with mentions wrapped in span tags
-    this.input.innerHTML = textBeforeCursor;
+    this.input.innerHTML = textBeforeCursor.replace(/\n/g, '<br>');
 
     // Move the caret to after the inserted mention
     const range = document.createRange();
@@ -447,7 +420,7 @@ class MentionInput extends HTMLElement {
     }
 
     this.checkForMention();
-    this.placeCaretAtEnd(this.input);
+    // this.placeCaretAtEnd(this.input);
 
     sel.removeAllRanges();
     sel.addRange(range);
@@ -570,7 +543,7 @@ class MentionInput extends HTMLElement {
 
     this.emojiInstance.setContent(emojisHTML);
 
-    this.placeCaretAtEnd(this.input);
+    // this.placeCaretAtEnd(this.input);
     this.positionTippyAtCaret(this.emojiInstance);
     this.emojiInstance.show();
 
@@ -583,12 +556,13 @@ class MentionInput extends HTMLElement {
 
   insertEmoji(emoji) {
     const cursorPos = this.getCaretPosition();
-    let text = this.input.innerHTML;
+    let text = this.input.innerText;
     const beforeCursor = text.substring(0, cursorPos);
     const afterCursor = text.substring(cursorPos);
     let newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
 
-    newText = newText.replace(/<br\s*\/?>/gi, '');
+    // newText = newText.replace(/<br\s*\/?>/gi, '');
+    newText = newText.replace(/\n/gi, '<br>');
 
     this.input.innerHTML = newText;
     this.placeCaretAtEnd(this.input);
