@@ -594,7 +594,7 @@ class MentionInput extends HTMLElement {
     this.input.innerHTML = newText;
     // this.setCaretPosition(cursorPos + emoji.length);
     this.placeCaretAtEnd(this.input);
-    this.hideSuggestions();
+    this.emojiInstance.hide();
   }
 }
 
