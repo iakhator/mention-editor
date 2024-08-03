@@ -54,7 +54,6 @@ class WidgetButton extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    console.log(newValue, 'newValue');
     if (name === 'disabled') {
       this.updateDisabledState(newValue !== null);
     }

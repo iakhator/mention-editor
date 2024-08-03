@@ -273,13 +273,6 @@ class MentionInput extends HTMLElement {
   }
 
   onKeyDown(e) {
-    if (e.key === 'Enter') {
-      // e.preventDefault();
-      // if (this.tippyInstance.state.isVisible) {
-      //   return;
-      // }
-      // this.insertNewLine();
-    }
     if (e.key === 'Backspace') {
       const selection = window.getSelection();
       if (selection.rangeCount > 0) {
@@ -412,11 +405,11 @@ class MentionInput extends HTMLElement {
 
     const lastMention = this.input.querySelector('span.mention:last-of-type');
     if (lastMention && lastMention.nextSibling) {
-      range.setStartAfter(lastMention.nextSibling); // Move caret after the space
+      range.setStartAfter(lastMention.nextSibling);
       range.setEndAfter(lastMention.nextSibling);
     } else {
       range.selectNodeContents(this.input);
-      range.collapse(false); // Move caret to the end if no sibling found
+      range.collapse(false);
     }
 
     this.checkForMention();
@@ -446,7 +439,6 @@ class MentionInput extends HTMLElement {
   }
 
   insertAtCaret(text) {
-    // Ensure the input is focused after inserting text
     this.input.focus();
 
     const sel = this.shadowRoot.getSelection
