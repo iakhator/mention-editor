@@ -85,31 +85,6 @@ class WidgetButton extends HTMLElement {
       console.error('Invalid buttonStyle JSON:', styleString);
     }
   }
-
-  render() {
-    return `
-    <style>
-      .widget-button {
-        background-color: #fff;
-        border: 1px solid #BFBFBF;
-        border-radius: 5rem;
-        cursor: pointer;
-      }
-  
-    .custom-button:hover {
-      background-color: #0056b3;
-    }
-  
-    button:disabled {
-      background-color: #BEBEBE;
-      border: none;
-      color: #666666;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    </style>
-    <button class="widget-button" id="btn"><slot></slot></button>`;
-  }
 }
 
 customElements.define('widget-button', WidgetButton);
