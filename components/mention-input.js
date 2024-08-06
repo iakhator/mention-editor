@@ -85,13 +85,13 @@ template.innerHTML = `
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #49A0CE;
+      color: var(--teal);
       background: #e1e2e2;
       font-size: 1.25rem;
       cursor: pointer;
     }
     .tippy-box[data-theme~="mention-light"] {
-      background-color: #ffffff; 
+      background-color: var(--white); 
       box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
       border-radius:10px;
       width: 350px;
@@ -106,8 +106,8 @@ template.innerHTML = `
     }
 
     .tippy-box[data-theme~="mention-light"] .suggestion-item:hover {
-      background: #0781C6;
-      color: #fff;
+      background: var(--teal);
+      color: var(--white);
     }
 
     .tippy-box[data-theme~="mention-light"] .suggestion-item:first-child:hover {
@@ -121,7 +121,7 @@ template.innerHTML = `
   }
 
   .tippy-box[data-theme~="emoji-light"] {
-      background-color: #ffffff; 
+      background-color: var(--white); 
       box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
       border-radius:10px;
       width: 310px;
@@ -144,14 +144,14 @@ template.innerHTML = `
     <p><span>94</span> Points To Award</p>
     <div class="mention-wrapper__input">
       <div class="mention-wrapper__input-button">
-        <widget-button buttonStyle='{"padding": "8px 15px", "fontWeight": "600"}'>@Employee</widget-button>
+        <widget-button button-style="padding: 8px 15px; font-weight: 600">@Employee</widget-button>
       </div>
       <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here...">
       </div>
     </div>
     <div class="mention-wrapper__footer">
       <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
-      <widget-button disabled buttonStyle='{"fontSize": "20px", "padding": "10px 30px"}'>Send Bravo!</widget-button>
+      <widget-button disabled button-style="font-size: 20px; padding: 10px 30px">Send Bravo!</widget-button>
     </div>
   </div>`;
 class MentionInput extends HTMLElement {
@@ -274,7 +274,9 @@ class MentionInput extends HTMLElement {
 
   onKeyDown(e) {
     if (e.key === 'Backspace') {
-      const selection = window.getSelection();
+      const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
       if (selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         const startContainer = range.startContainer;
@@ -290,8 +292,7 @@ class MentionInput extends HTMLElement {
           // Check if the parent element is a span with an @mention
           if (
             parentElement.tagName === 'SPAN' &&
-            mentionRegex.test(parentElement.textContent) &&
-            startOffset === parentElement.textContent.length
+            mentionRegex.test(parentElement.textContent)
           ) {
             e.preventDefault();
             parentElement.remove();
@@ -361,20 +362,18 @@ class MentionInput extends HTMLElement {
     const text = this.input.textContent;
     const mentionRegex = /@(\w+\s*\w*)/g;
 
-    let buttonStyle = JSON.parse(
-      this.employeeButton.getAttribute('buttonStyle')
-    );
+    let buttonStyle = this.employeeButton.getAttribute('button-style')
+    const backgroundColor = 'background-color: var(--btn-bg);';
 
-    if (mentionRegex.test(text)) {
-      buttonStyle.backgroundColor = 'yellow';
+    const hasMention = mentionRegex.test(text)
+
+    if (hasMention) {
+      buttonStyle  += '; ' + backgroundColor;
     } else {
-      delete buttonStyle.backgroundColor;
+      buttonStyle = 'padding: 8px 15px; font-weight: 600'
     }
 
-    this.employeeButton.setAttribute(
-      'buttonStyle',
-      JSON.stringify(buttonStyle)
-    );
+    this.employeeButton.setAttribute('button-style', buttonStyle);
   }
 
   selectMention(mention) {
@@ -388,13 +387,11 @@ class MentionInput extends HTMLElement {
       return `<span class="mention">${match}</span>`;
     });
 
-    // Insert the selected mention at the current caret position
     const mentionWithSpace = `<span class="mention">@${mention}</span>&nbsp;`;
 
-    // Find the last @mention being typed and replace it with mentionWithSpace
+    // Find the last typed @mention and replace it with mentionWithSpace
     const textBeforeCursor = newText.replace(/@(\w*\s*\w*)$/, mentionWithSpace);
 
-    // Set the new content with mentions wrapped in span tags
     this.input.innerHTML = textBeforeCursor.replace(/\n/g, '<br>');
 
     // Move the caret to after the inserted mention
@@ -413,7 +410,6 @@ class MentionInput extends HTMLElement {
     }
 
     this.checkForMention();
-    // this.placeCaretAtEnd(this.input);
 
     sel.removeAllRanges();
     sel.addRange(range);
@@ -553,7 +549,6 @@ class MentionInput extends HTMLElement {
     const afterCursor = text.substring(cursorPos);
     let newText = `${beforeCursor}<span class="emoji">${emoji}</span>${afterCursor}`;
 
-    // newText = newText.replace(/<br\s*\/?>/gi, '');
     newText = newText.replace(/\n/gi, '<br>');
 
     this.input.innerHTML = newText;

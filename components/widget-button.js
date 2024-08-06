@@ -1,27 +1,3 @@
-const template = document.createElement('template');
-template.innerHTML = `
-  <style>
-    .widget-button {
-      background-color: #fff;
-      border: 1px solid #BFBFBF;
-      border-radius: 5rem;
-      cursor: pointer;
-    }
-
-  .custom-button:hover {
-    background-color: #0056b3;
-  }
-
-  button:disabled {
-    background-color: #BEBEBE;
-    border: none;
-    color: #666666;
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  </style>
-  <button class="widget-button" id="btn"><slot></slot></button>
-`;
 
 class WidgetButton extends HTMLElement {
   static get observedAttributes() {
@@ -33,10 +9,6 @@ class WidgetButton extends HTMLElement {
     this.attachShadow({
       mode: 'open',
     });
-
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
-    this.addEventListener('click', this.handleClick.bind(this));
-    this.buttonElement = this.shadowRoot.querySelector('button');
   }
 
   handleClick() {
@@ -49,8 +21,12 @@ class WidgetButton extends HTMLElement {
   }
 
   connectedCallback() {
+    this.render()
+    this.buttonElement = this.shadowRoot.getElementById('btn');
+    this.addEventListener('click', this.handleClick.bind(this));
+
     this.updateDisabledState(this.hasAttribute('disabled'));
-    this.updateButtonStyle(this.getAttribute('buttonStyle'));
+
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -59,11 +35,12 @@ class WidgetButton extends HTMLElement {
     }
 
     if (name === 'button-style') {
-      this.updateButtonStyle(newValue);
+       this.render(newValue);
     }
   }
 
   updateDisabledState(isDisabled) {
+    if (!this.buttonElement) return;
     if (isDisabled) {
       this.buttonElement.setAttribute('disabled', '');
       this.buttonElement.classList.add('disabled');
@@ -73,17 +50,26 @@ class WidgetButton extends HTMLElement {
     }
   }
 
-  updateButtonStyle(styleString) {
-    if (!styleString) return;
-
-    try {
-      const styleObject = JSON.parse(styleString);
-      Object.keys(styleObject).forEach((key) => {
-        this.buttonElement.style[key] = styleObject[key];
-      });
-    } catch (e) {
-      console.error('Invalid buttonStyle JSON:', styleString);
+  render(style) {
+    const bStyle = style ? style : this.getAttribute('button-style');
+    this.shadowRoot.innerHTML = `
+      <style>
+    .widget-button {
+      background-color: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 5rem;
+      cursor: pointer;
     }
+
+    button:disabled {
+      background-color: var(--disabled-bg);
+      border: none;
+      color: var(--disabled-color);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  </style>
+  <button class="widget-button" id="btn" style="${bStyle}"><slot></slot></button>`
   }
 }
 

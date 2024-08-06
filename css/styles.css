@@ -2,8 +2,17 @@
 
 :root {
   --bg-gray: #f4f4f4;
+  --white: #fff;
+  --teal: #49A0CE;
 
   --border: #C2C2C2;
+
+
+/*  button*/
+
+  --btn-bg: #C2C2C2;
+  --disabled-bg: #BEBEBE;
+  --disabled-color: #666666;
 }
 
 body {

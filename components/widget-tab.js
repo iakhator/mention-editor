@@ -49,7 +49,7 @@ a {
 }
 
 .tabBlock-tab {
-  background-color: #fff;
+  background-color: var(--white);
   color: #b5a8c5;
   cursor: pointer;
   display: inline-block;
@@ -91,12 +91,10 @@ a {
   position: relative;
   color: #d8d8d8;
   z-index: 1;
-  border-color: #d8d8d8;
   border-left-style: solid;
+  border-right-style: solid;
   border-top: solid;
   border-width: 2px;
-  border-left: solid;
-  border-right: solid;
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
 }
@@ -105,11 +103,11 @@ a {
 }
 
 .tabBlock-tab.is-active::after {
-  background-color: #fff;
+  background-color: var(--white);
 }
 
 .tabBlock-content {
-  background-color: #fff;
+  background-color: var(--white);
   border: 2px solid #d8d8d8;
   padding: 1.25rem;
   border-bottom-left-radius: 10px;
