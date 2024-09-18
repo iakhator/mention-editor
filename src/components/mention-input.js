@@ -1,6 +1,6 @@
 import tippy from 'tippy.js';
 import './widget-button.js';
-import todoStore from '../store/index.js';
+import mentionableStore from '../store/index.js';
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -164,8 +164,8 @@ class MentionInput extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
 
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
-
+    // this.shadowRoot.appendChild(template.content.cloneNode(true));
+    this.render();
     this.mentions = [
       { firstname: 'Alice', lastname: 'James' },
       { firstname: 'Babara', lastname: 'Newton' },
@@ -270,11 +270,6 @@ class MentionInput extends HTMLElement {
       this.insertAtCaret('@');
       this.showSuggestions(this.mentions);
     });
-
-    const pre = this.shadowRoot.querySelector('#output');
-    pre.textContent = `You have ${todoStore.todos.length} todos.`;
-
-    console.log(pre.textContent, 'pre');
   }
 
   disconnectedCallBack() {
@@ -565,6 +560,165 @@ class MentionInput extends HTMLElement {
     this.input.innerHTML = newText;
     this.placeCaretAtEnd(this.input);
     this.emojiInstance.hide();
+  }
+
+  render() {
+    this.shadowRoot.innerHTML = `
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/fontawesome.min.css"
+      />
+    <style>
+      p {
+        font-size: 30px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      p > span {
+          font-weight: bold;
+
+      }
+
+      :host {
+          display: block;
+          height: calc(100% - 400px);
+      }
+      
+      .mention-wrapper {
+        display: grid;
+        grid-template-rows: 20% auto 20%;
+        gap: 0.5rem;
+        height: 100%;
+      }
+
+      .mention-wrapper__input {
+        border: 2px solid #d8d8d8;
+        border-radius: 20px;
+        display:flex;
+        flex-direction: column;
+        max-height: 100%; 
+        overflow-y: auto;
+      }
+
+    .mention-wrapper__input-button {
+        padding: 20px 0px 20px 20px;
+      }
+
+      .mention-wrapper__input-textarea {
+        // white-space: pre-wrap;
+        padding: 0px 20px 20px 20px;
+        height: 40%;
+        overflow-y: auto;
+        overflow-wrap: break-word;
+      }
+
+      .mention-wrapper__input-textarea:empty::before {
+        content: attr(data-placeholder);
+        color: #d8d8d8;
+        pointer-events: none;
+        position: absolute;
+      }
+
+      .mention-wrapper__input-textarea:focus {
+        outline: none;
+      }
+
+      .suggestion-box {
+        border: 3px solid #75AABE;
+      }
+
+      .mention {
+        background-color: #e1e2e2;
+        border-radius: 4px;
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+
+      .mention-wrapper__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .icon-button {
+        height: 40px;
+        width: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--teal);
+        background: #e1e2e2;
+        font-size: 1.25rem;
+        cursor: pointer;
+      }
+      .tippy-box[data-theme~="mention-light"] {
+        background-color: var(--white); 
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        border-radius:10px;
+        width: 350px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 0.875rem;
+      }
+
+      .tippy-box[data-theme~="mention-light"] .suggestion-item {
+        padding: 0.7rem 1rem;
+        cursor: pointer;
+      }
+
+      .tippy-box[data-theme~="mention-light"] .suggestion-item:hover {
+        background: var(--teal);
+        color: var(--white);
+      }
+
+      .tippy-box[data-theme~="mention-light"] .suggestion-item:first-child:hover {
+          border-top-left-radius: 10px; 
+          border-top-right-radius: 10px; 
+      }
+
+    .tippy-box[data-theme~="mention-light"] .suggestion-item:last-child:hover {
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    .tippy-box[data-theme~="emoji-light"] {
+        background-color: var(--white); 
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        border-radius:10px;
+        width: 310px;
+        max-width: 310px;
+        max-height: 200px;
+        overflow-y: auto;
+        display: flex;
+        padding: 0.8rem;
+      }
+      
+      .tippy-box[data-theme~="emoji-light"] .tippy-content{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        font-size: 1.125rem;
+      }
+
+    </style>
+    <div class="mention-wrapper">
+    <pre id='output'></pre>
+      <p><span>94</span> Points To Award</p>
+      <div class="mention-wrapper__input">
+        <div class="mention-wrapper__input-button">
+          <widget-button button-style="padding: 8px 15px; font-weight: 600">@Employee</widget-button>
+        </div>
+        <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here...">
+        </div>
+      </div>
+      <div class="mention-wrapper__footer">
+        <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
+        <widget-button disabled button-style="font-size: 20px; padding: 10px 30px">Send Bravo!</widget-button>
+      </div>
+    </div>`;
   }
 }
 

@@ -2,7 +2,6 @@ import 'tippy.js/dist/tippy.css';
 import './components/widget-tab.js';
 import './components/mention-input.js';
 
-import todoStore from './store';
 import { autorun } from 'mobx';
 
 class WidgetBox extends HTMLElement {
@@ -14,12 +13,6 @@ class WidgetBox extends HTMLElement {
   connectedCallback() {
     autorun(() => {
       this.render();
-      const button = this.shadowRoot.getElementById('clickme');
-
-      button.addEventListener('click', () => {
-        todoStore.addTodo({ title: 'New todo', finished: false });
-        console.log(todoStore.todos, 'todos');
-      });
     });
   }
 
@@ -48,8 +41,6 @@ class WidgetBox extends HTMLElement {
           }
     </style>
     <div class="widget_box">
-      <pre></pre>
-      <button id="clickme">Click me</button>
       <widget-tab>
         <mention-input></mention-input>
         </widget-tab>
