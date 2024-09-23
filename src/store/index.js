@@ -1,22 +1,26 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, action } from 'mobx';
 class MentionableStore {
-  content = {
-    type: 'doc',
-    content: [
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Hello, this is a simple example of TipTap JSON content.',
-          },
-        ],
-      },
-    ],
-  };
+  // content = {
+  //   type: 'doc',
+  //   content: [
+  //     {
+  //       type: 'paragraph',
+  //       content: [
+  //         {
+  //           type: 'text',
+  //           text: 'Hello, this is a simple example of TipTap JSON content.',
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // };
+
+  content = {};
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      convertHTMLToTiptapJSON: action,
+    });
   }
 
   setInputValue(value) {
@@ -120,37 +124,37 @@ class MentionableStore {
   }
 
   // use convertFromTiptapJSON(json.content)
-  convertFromTiptapJSON(content) {
-    let text = '';
+  // convertFromTiptapJSON(content) {
+  //   let text = '';
 
-    const processContent = (content) => {
-      for (const contentItem of content) {
-        if (contentItem.type === 'bulletList') {
-          for (const listItem of contentItem.content) {
-            text += `- ${processParagraph(listItem.content[0])}\n`;
-          }
-        } else if (contentItem.type === 'paragraph') {
-          text += processParagraph(contentItem) + '\n';
-        }
-      }
-    };
+  //   const processContent = (content) => {
+  //     for (const contentItem of content) {
+  //       if (contentItem.type === 'bulletList') {
+  //         for (const listItem of contentItem.content) {
+  //           text += `- ${processParagraph(listItem.content[0])}\n`;
+  //         }
+  //       } else if (contentItem.type === 'paragraph') {
+  //         text += processParagraph(contentItem) + '\n';
+  //       }
+  //     }
+  //   };
 
-    const processParagraph = (paragraph) => {
-      if (!paragraph.content) {
-        return '';
-      }
+  //   const processParagraph = (paragraph) => {
+  //     if (!paragraph.content) {
+  //       return '';
+  //     }
 
-      return paragraph.content
-        .filter((textNode) => textNode.type === 'text')
-        .map((textNode) => textNode.text)
-        .join(' ')
-        .trim();
-    };
+  //     return paragraph.content
+  //       .filter((textNode) => textNode.type === 'text')
+  //       .map((textNode) => textNode.text)
+  //       .join(' ')
+  //       .trim();
+  //   };
 
-    processContent(content);
+  //   processContent(content);
 
-    return text.trim();
-  }
+  //   return text.trim();
+  // }
 
   convertHTMLToTiptapJSON(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -172,11 +176,10 @@ class MentionableStore {
             text: child.textContent,
             marks: [{ type: 'bold' }],
           });
-        } else if (child.nodeName === 'I' || child.nodeName === 'EM') {
+        } else if (child.nodeName === 'DIV') {
           paragraphText.push({
-            type: 'text',
-            text: child.textContent,
-            marks: [{ type: 'italic' }],
+            type: 'paragraph',
+            content: paragraphText,
           });
         } else if (child.nodeName === 'A') {
           paragraphText.push({
@@ -209,6 +212,7 @@ class MentionableStore {
     const handleNode = (node) => {
       switch (node.nodeName) {
         case 'P':
+        case 'DIV':
           tiptapJSON.content.push(applyMarks(node));
           break;
         case 'UL': {
@@ -265,7 +269,7 @@ class MentionableStore {
 
     // Traverse the body of the parsed document
     doc.body.childNodes.forEach(handleNode);
-
+    // this.setInputValue(tiptapJSON);
     return tiptapJSON;
   }
 }

@@ -1,8 +1,7 @@
+import './css/styles.css';
 import 'tippy.js/dist/tippy.css';
 import './components/widget-tab.js';
 import './components/mention-input.js';
-
-import { autorun } from 'mobx';
 
 class WidgetBox extends HTMLElement {
   constructor() {
@@ -11,9 +10,7 @@ class WidgetBox extends HTMLElement {
   }
 
   connectedCallback() {
-    autorun(() => {
-      this.render();
-    });
+    this.render();
   }
 
   render() {
@@ -50,3 +47,8 @@ class WidgetBox extends HTMLElement {
 }
 
 customElements.define('widget-box', WidgetBox);
+
+document.addEventListener('DOMContentLoaded', () => {
+  const app = document.getElementById('app');
+  app.innerHTML = '<widget-box></widget-box>';
+});

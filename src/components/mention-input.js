@@ -2,169 +2,14 @@ import tippy from 'tippy.js';
 import './widget-button.js';
 import mentionableStore from '../store/index.js';
 
-const template = document.createElement('template');
-template.innerHTML = `
-  <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/fontawesome.min.css"
-    />
-  <style>
-    p {
-      font-size: 30px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    p > span {
-        font-weight: bold;
-
-    }
-
-    :host {
-        display: block;
-        height: calc(100% - 400px);
-    }
-    
-    .mention-wrapper {
-      display: grid;
-      grid-template-rows: 20% auto 20%;
-      gap: 0.5rem;
-      height: 100%;
-    }
-
-    .mention-wrapper__input {
-      border: 2px solid #d8d8d8;
-      border-radius: 20px;
-      display:flex;
-      flex-direction: column;
-      max-height: 100%; 
-      overflow-y: auto;
-    }
-
-  .mention-wrapper__input-button {
-      padding: 20px 0px 20px 20px;
-    }
-
-    .mention-wrapper__input-textarea {
-      // white-space: pre-wrap;
-      padding: 0px 20px 20px 20px;
-      height: 40%;
-      overflow-y: auto;
-      overflow-wrap: break-word;
-    }
-
-     .mention-wrapper__input-textarea:empty::before {
-      content: attr(data-placeholder);
-      color: #d8d8d8;
-      pointer-events: none;
-      position: absolute;
-    }
-
-    .mention-wrapper__input-textarea:focus {
-      outline: none;
-    }
-
-    .suggestion-box {
-      border: 3px solid #75AABE;
-    }
-
-    .mention {
-      background-color: #e1e2e2;
-      border-radius: 4px;
-      padding: 2px 4px;
-      border-radius: 3px;
-    }
-
-    .mention-wrapper__footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .icon-button {
-      height: 40px;
-      width: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--teal);
-      background: #e1e2e2;
-      font-size: 1.25rem;
-      cursor: pointer;
-    }
-    .tippy-box[data-theme~="mention-light"] {
-      background-color: var(--white); 
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-      border-radius:10px;
-      width: 350px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 0.875rem;
-    }
-
-    .tippy-box[data-theme~="mention-light"] .suggestion-item {
-      padding: 0.7rem 1rem;
-      cursor: pointer;
-    }
-
-    .tippy-box[data-theme~="mention-light"] .suggestion-item:hover {
-      background: var(--teal);
-      color: var(--white);
-    }
-
-    .tippy-box[data-theme~="mention-light"] .suggestion-item:first-child:hover {
-        border-top-left-radius: 10px; 
-        border-top-right-radius: 10px; 
-    }
-
-  .tippy-box[data-theme~="mention-light"] .suggestion-item:last-child:hover {
-      border-bottom-left-radius: 10px;
-      border-bottom-right-radius: 10px;
-  }
-
-  .tippy-box[data-theme~="emoji-light"] {
-      background-color: var(--white); 
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-      border-radius:10px;
-      width: 310px;
-      max-width: 310px;
-      max-height: 200px;
-      overflow-y: auto;
-      display: flex;
-      padding: 0.8rem;
-    }
-    
-    .tippy-box[data-theme~="emoji-light"] .tippy-content{
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      font-size: 1.125rem;
-    }
-
-  </style>
-  <div class="mention-wrapper">
-   <pre id='output'></pre>
-    <p><span>94</span> Points To Award</p>
-    <div class="mention-wrapper__input">
-      <div class="mention-wrapper__input-button">
-        <widget-button button-style="padding: 8px 15px; font-weight: 600">@Employee</widget-button>
-      </div>
-      <div id="mention-input" contenteditable="true" class="mention-wrapper__input-textarea" data-placeholder="Type your message here...">
-      </div>
-    </div>
-    <div class="mention-wrapper__footer">
-      <div role="button" class="icon-button" id="emoji-button"><i class="fa-regular fa-face-smile"></i></div>
-      <widget-button disabled button-style="font-size: 20px; padding: 10px 30px">Send Bravo!</widget-button>
-    </div>
-  </div>`;
+import { autorun } from 'mobx';
 class MentionInput extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
 
     // this.shadowRoot.appendChild(template.content.cloneNode(true));
+
     this.render();
     this.mentions = [
       { firstname: 'Alice', lastname: 'James' },
@@ -264,6 +109,8 @@ class MentionInput extends HTMLElement {
   }
 
   connectedCallback() {
+    autorun();
+    console.log(mentionableStore, 'mentionableStore');
     const widgetButton = this.shadowRoot.querySelector('widget-button');
     widgetButton.addEventListener('handleClick', () => {
       this.placeCaretAtEnd(this.input);
@@ -278,60 +125,100 @@ class MentionInput extends HTMLElement {
     this.emojiInstance.destroy();
   }
 
+  insertParagraphAtCaret() {
+    const selection = this.shadowRoot.getSelection
+      ? this.shadowRoot.getSelection()
+      : document.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
+    // Create a new <p> element
+    const newParagraph = document.createElement('p');
+    const br = document.createElement('br'); // Ensures there's a line break
+    newParagraph.appendChild(br);
+
+    // Delete the current contents in the range
+    range.deleteContents();
+
+    // Insert the <p> element into the DOM at the caret position
+    range.insertNode(newParagraph);
+
+    // Adjust the range to position the caret inside the new <p> element
+    range.setStart(newParagraph, 0);
+    range.setEnd(newParagraph, 0);
+
+    // Clear previous selection and add the new range
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    // Move focus to the new paragraph
+    newParagraph.focus();
+  }
+
   onKeyDown(e) {
-    if (e.key === 'Backspace') {
-      const selection = this.shadowRoot.getSelection
-        ? this.shadowRoot.getSelection()
-        : document.getSelection();
-      if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const startContainer = range.startContainer;
-        const startOffset = range.startOffset;
-        // Check if the caret is at the beginning of a text node
-        if (
-          startContainer.nodeType === Node.TEXT_NODE &&
-          startOffset === startContainer.textContent.length
-        ) {
-          const parentElement = startContainer.parentElement;
-          // Regex to match @mention
-          const mentionRegex = /@\w+/;
-          // Check if the parent element is a span with an @mention
-          if (
-            parentElement.tagName === 'SPAN' &&
-            mentionRegex.test(parentElement.textContent)
-          ) {
-            e.preventDefault();
-            parentElement.remove();
-            this.checkForMention();
-            this.placeCaretAtEnd(this.input);
-            return;
-          }
-        }
-      }
-    }
+    // if (e.key === 'Enter') {
+    //   console.log('enter');
+    //   e.preventDefault();
+    //   this.insertParagraphAtCaret();
+    // }
+    // if (e.key === 'Backspace') {
+    //   const selection = this.shadowRoot.getSelection
+    //     ? this.shadowRoot.getSelection()
+    //     : document.getSelection();
+    //   if (selection.rangeCount > 0) {
+    //     const range = selection.getRangeAt(0);
+    //     const startContainer = range.startContainer;
+    //     const startOffset = range.startOffset;
+    //     // Check if the caret is at the beginning of a text node
+    //     if (
+    //       startContainer.nodeType === Node.TEXT_NODE &&
+    //       startOffset === startContainer.textContent.length
+    //     ) {
+    //       const parentElement = startContainer.parentElement;
+    //       // Regex to match @mention
+    //       const mentionRegex = /@\w+/;
+    //       // Check if the parent element is a span with an @mention
+    //       if (
+    //         parentElement.tagName === 'SPAN' &&
+    //         mentionRegex.test(parentElement.textContent)
+    //       ) {
+    //         e.preventDefault();
+    //         parentElement.remove();
+    //         this.checkForMention();
+    //         this.placeCaretAtEnd(this.input);
+    //         return;
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   onKeyUp(e) {
-    const cursorPos = this.getCaretPosition();
-    const text = this.input.textContent.substring(0, cursorPos);
-    const mentionMatch = text.match(/@(\w*)$/);
+    const json = mentionableStore.convertHTMLToTiptapJSON(this.input.innerHTML);
+    mentionableStore.setInputValue(json);
+    console.log(json, 'json');
+    e.preventDefault();
+    // const cursorPos = this.getCaretPosition();
+    // const text = this.input.textContent.substring(0, cursorPos);
+    // const mentionMatch = text.match(/@(\w*)$/);
 
-    if (mentionMatch) {
-      const query = mentionMatch[1];
-      const filteredMentions = this.mentions.filter(
-        ({ firstname, lastname }) =>
-          firstname.toLowerCase().startsWith(query.toLowerCase()) ||
-          lastname.toLowerCase().startsWith(query.toLowerCase())
-      );
+    // if (mentionMatch) {
+    //   const query = mentionMatch[1];
+    //   const filteredMentions = this.mentions.filter(
+    //     ({ firstname, lastname }) =>
+    //       firstname.toLowerCase().startsWith(query.toLowerCase()) ||
+    //       lastname.toLowerCase().startsWith(query.toLowerCase())
+    //   );
 
-      if (filteredMentions.length > 0) {
-        this.showSuggestions(filteredMentions, cursorPos);
-      } else {
-        this.hideSuggestions();
-      }
-    } else {
-      this.hideSuggestions();
-    }
+    //   if (filteredMentions.length > 0) {
+    //     this.showSuggestions(filteredMentions, cursorPos);
+    //   } else {
+    //     this.hideSuggestions();
+    //   }
+    // } else {
+    //   this.hideSuggestions();
+    // }
   }
 
   onInput() {
@@ -704,8 +591,8 @@ class MentionInput extends HTMLElement {
       }
 
     </style>
+    <pre>${JSON.stringify(mentionableStore.content)} content</pre>
     <div class="mention-wrapper">
-    <pre id='output'></pre>
       <p><span>94</span> Points To Award</p>
       <div class="mention-wrapper__input">
         <div class="mention-wrapper__input-button">
