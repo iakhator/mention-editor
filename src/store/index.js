@@ -151,6 +151,123 @@ class MentionableStore {
 
     return text.trim();
   }
+
+  convertHTMLToTiptapJSON(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const tiptapJSON = {
+      type: 'doc',
+      content: [],
+    };
+
+    const applyMarks = (node) => {
+      const paragraphText = [];
+
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          paragraphText.push({ type: 'text', text: child.textContent });
+        } else if (child.nodeName === 'B' || child.nodeName === 'STRONG') {
+          paragraphText.push({
+            type: 'text',
+            text: child.textContent,
+            marks: [{ type: 'bold' }],
+          });
+        } else if (child.nodeName === 'I' || child.nodeName === 'EM') {
+          paragraphText.push({
+            type: 'text',
+            text: child.textContent,
+            marks: [{ type: 'italic' }],
+          });
+        } else if (child.nodeName === 'A') {
+          paragraphText.push({
+            type: 'text',
+            text: child.textContent,
+            marks: [
+              { type: 'link', attrs: { href: child.getAttribute('href') } },
+            ],
+          });
+        } else if (
+          child.nodeName === 'SPAN' &&
+          child.getAttribute('data-type') === 'mention'
+        ) {
+          const id = child.getAttribute('data-id');
+          const user = mentionables.value[id]; // Assuming mentionables is available
+          paragraphText.push({
+            type: 'mention',
+            attrs: { id: user },
+            label: null,
+          });
+        }
+      });
+
+      return {
+        type: 'paragraph',
+        content: paragraphText,
+      };
+    };
+
+    const handleNode = (node) => {
+      switch (node.nodeName) {
+        case 'P':
+          tiptapJSON.content.push(applyMarks(node));
+          break;
+        case 'UL': {
+          const listItems = Array.from(node.querySelectorAll('li')).map(
+            (item) => ({
+              type: 'listItem',
+              content: [applyMarks(item)],
+            })
+          );
+          tiptapJSON.content.push({
+            type: 'bulletList',
+            content: listItems,
+          });
+          break;
+        }
+        case 'OL': {
+          const listItems = Array.from(node.querySelectorAll('li')).map(
+            (item) => ({
+              type: 'listItem',
+              content: [applyMarks(item)],
+            })
+          );
+          tiptapJSON.content.push({
+            type: 'orderedList',
+            content: listItems,
+          });
+          break;
+        }
+        case 'H1':
+          tiptapJSON.content.push({
+            type: 'heading',
+            attrs: { level: 1 },
+            content: [{ type: 'text', text: node.textContent }],
+          });
+          break;
+        case 'H2':
+          tiptapJSON.content.push({
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: node.textContent }],
+          });
+          break;
+        case 'H3':
+          tiptapJSON.content.push({
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: node.textContent }],
+          });
+          break;
+        default:
+          break;
+      }
+    };
+
+    // Traverse the body of the parsed document
+    doc.body.childNodes.forEach(handleNode);
+
+    return tiptapJSON;
+  }
 }
 
 const mentionableStore = new MentionableStore();
