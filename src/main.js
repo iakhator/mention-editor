@@ -2,6 +2,7 @@ import './css/styles.css';
 import 'tippy.js/dist/tippy.css';
 import './components/widget-tab.js';
 import './components/mention-input.js';
+// import { autorun } from 'mobx';
 
 class WidgetBox extends HTMLElement {
   constructor() {
@@ -10,7 +11,9 @@ class WidgetBox extends HTMLElement {
   }
 
   connectedCallback() {
+    // autorun(() => {
     this.render();
+    // });
   }
 
   render() {

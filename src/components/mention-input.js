@@ -2,7 +2,7 @@ import tippy from 'tippy.js';
 import './widget-button.js';
 import mentionableStore from '../store/index.js';
 
-import { autorun } from 'mobx';
+// import { autorun } from 'mobx';
 class MentionInput extends HTMLElement {
   constructor() {
     super();
@@ -109,7 +109,6 @@ class MentionInput extends HTMLElement {
   }
 
   connectedCallback() {
-    autorun();
     console.log(mentionableStore, 'mentionableStore');
     const widgetButton = this.shadowRoot.querySelector('widget-button');
     widgetButton.addEventListener('handleClick', () => {
@@ -195,9 +194,9 @@ class MentionInput extends HTMLElement {
   }
 
   onKeyUp(e) {
-    const json = mentionableStore.convertHTMLToTiptapJSON(this.input.innerHTML);
-    mentionableStore.setInputValue(json);
-    console.log(json, 'json');
+    mentionableStore.convertHTMLToTiptapJSON(this.input.innerHTML);
+    // mentionableStore.setInputValue(json);
+    // console.log(json, 'json');
     e.preventDefault();
     // const cursorPos = this.getCaretPosition();
     // const text = this.input.textContent.substring(0, cursorPos);

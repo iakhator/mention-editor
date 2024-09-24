@@ -1,4 +1,4 @@
-import { makeAutoObservable, action } from 'mobx';
+import { makeAutoObservable, action, observable } from 'mobx';
 class MentionableStore {
   // content = {
   //   type: 'doc',
@@ -19,6 +19,7 @@ class MentionableStore {
 
   constructor() {
     makeAutoObservable(this, {
+      content: observable,
       convertHTMLToTiptapJSON: action,
     });
   }
@@ -157,6 +158,7 @@ class MentionableStore {
   // }
 
   convertHTMLToTiptapJSON(html) {
+    console.log(html, 'html');
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     const tiptapJSON = {
